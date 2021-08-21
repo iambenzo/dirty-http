@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/iambenzo/dirtyhttp/middleware"
 )
@@ -96,11 +97,21 @@ func (api Api) StartService() {
 // Will start a HTTP Listener on port 8080, unless configured otherwise.
 //
 // Will make use of a default suite of middleware: Timeout and Gzip.
-func (api Api) StartServiceNoAuth() {
+func (api *Api) StartServiceNoAuth() {
 
     if api.Config == nil {
         log := logger{}
         log.Fatal("dirtyhttp needs to be <Init()>ialised")
+    } else {
+        // We should probably quickly validate the custom config
+
+        if api.Config.ApiPort == "" {
+            // Default if empty
+            api.Config.ApiPort = ":8080"
+        } else if !strings.Contains(api.Config.ApiPort, ":") {
+            // Ensuring that the port name has the correct formatting
+            api.Config.ApiPort = ":" + api.Config.ApiPort
+        }
     }
 
 	api.Logger.Info("Listening on http://localhost" + api.Config.ApiPort)

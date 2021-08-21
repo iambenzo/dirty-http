@@ -61,3 +61,23 @@ func main() {
 
 ```
 
+By default, the Service will look for values in `API_USER` and `API_PASSWORD` to use as Basic Authentication credentials.
+
+If you want to start a service without the default requirement for Basic Auth, you can swap out the above main function for one that looks a little like this:
+
+```go
+var api dirtyhttp.Api = dirtyhttp.Api{}
+
+func main() {
+    // Initialisation with custom config
+    config := dirtyhttp.EnvConfig{}
+    api.InitWithConfig(&config)
+
+    // Register a handler
+    hello := &helloHandler{}
+    api.RegisterHandler("/hello", *hello)
+
+    // Go, baby, go!
+    api.StartServiceNoAuth()
+}
+```
