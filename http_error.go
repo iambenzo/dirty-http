@@ -64,3 +64,8 @@ func (e *httpErrorWriter) InternalServerError(w http.ResponseWriter, msg string)
 func (e *httpErrorWriter) BadParameters(w http.ResponseWriter, parameter string) {
 	e.writeException(w, http.StatusBadRequest, fmt.Sprintf("Parameter '%s' is either missing or invalid", parameter))
 }
+
+// Use when the tre-defined errors just won't do.
+func (e *httpErrorWriter) WriteError(w http.ResponseWriter, status int, msg string) {
+    e.writeException(w, status, msg)
+}
