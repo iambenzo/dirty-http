@@ -122,23 +122,6 @@ func (api *Api) StartServiceNoAuth() {
 	)
 }
 
-// Generic function for erroring out
-// Exits program if an error is present
-func (api Api) CheckError(err error, msg string) {
-	if err != nil {
-		api.Logger.Fatal(msg)
-	}
-}
-
-// Generic function for validaing HTTP status codes
-// Exits program if status code isn't as expected
-func (api Api) CheckStatusCode(code, expected int, msg string) {
-	if code != expected {
-		fmt.Println(msg)
-		os.Exit(1)
-	}
-}
-
 // Generic HTTP response struct for passing messages back to users
 type HttpMessageResponse struct {
 	Message string `json:"message"`
