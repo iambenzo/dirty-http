@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/iambenzo/dirtyhttp/middleware"
@@ -29,11 +28,11 @@ func (api Api) RegisterHandler(path string, handler http.Handler) {
 // before registering a basic health check endpoint at "<server>:<port>/health".
 func (api *Api) Init() {
 
-    // Avoid initialising multiple times
-    if api.Config != nil {
-        api.Logger.Error("Attempt to initialise dirtyhttp multiple times")
-        return
-    }
+	// Avoid initialising multiple times
+	if api.Config != nil {
+		api.Logger.Error("Attempt to initialise dirtyhttp multiple times")
+		return
+	}
 
 	// First configure logger and error response helper
 	api.Logger = &logger{}
@@ -42,7 +41,9 @@ func (api *Api) Init() {
 
 	// Attempt to get config from environment variables
 	cnf, err := getEnvConfig()
-	api.CheckError(err, fmt.Sprintf("Error in config: %v", err))
+	if err != nil {
+		api.Logger.Fatal(fmt.Sprintf("Error in config: %v", err))
+	}
 	api.Config = cnf
 
 	// Register a health check endpoint
@@ -54,11 +55,11 @@ func (api *Api) Init() {
 // Initialise the service with a programmatically supplied configuration
 func (api *Api) InitWithConfig(config *EnvConfig) {
 
-    // Avoid initialising multiple times
-    if api.Config != nil {
-        api.Logger.Error("Attempt to initialise dirtyhttp multiple times")
-        return
-    }
+	// Avoid initialising multiple times
+	if api.Config != nil {
+		api.Logger.Error("Attempt to initialise dirtyhttp multiple times")
+		return
+	}
 
 	api.Logger = &logger{}
 	api.HttpErrorWriter = newHttpErrorWriter(api.Logger)
@@ -76,10 +77,10 @@ func (api *Api) InitWithConfig(config *EnvConfig) {
 // Will make use of a default suite of middleware: Timeout, Gzip and Basic Authentication.
 func (api Api) StartService() {
 
-    if api.Config == nil {
-        log := logger{}
-        log.Fatal("dirtyhttp needs to be <Init()>ialised")
-    }
+	if api.Config == nil {
+		log := logger{}
+		log.Fatal("dirtyhttp needs to be <Init()>ialised")
+	}
 
 	api.Logger.Info("Listening on http://localhost" + api.Config.ApiPort)
 	http.ListenAndServe(api.Config.ApiPort,
@@ -99,20 +100,20 @@ func (api Api) StartService() {
 // Will make use of a default suite of middleware: Timeout and Gzip.
 func (api *Api) StartServiceNoAuth() {
 
-    if api.Config == nil {
-        log := logger{}
-        log.Fatal("dirtyhttp needs to be <Init()>ialised")
-    } else {
-        // We should probably quickly validate the custom config
+	if api.Config == nil {
+		log := logger{}
+		log.Fatal("dirtyhttp needs to be <Init()>ialised")
+	} else {
+		// We should probably quickly validate the custom config
 
-        if api.Config.ApiPort == "" {
-            // Default if empty
-            api.Config.ApiPort = ":8080"
-        } else if !strings.Contains(api.Config.ApiPort, ":") {
-            // Ensuring that the port name has the correct formatting
-            api.Config.ApiPort = ":" + api.Config.ApiPort
-        }
-    }
+		if api.Config.ApiPort == "" {
+			// Default if empty
+			api.Config.ApiPort = ":8080"
+		} else if !strings.Contains(api.Config.ApiPort, ":") {
+			// Ensuring that the port name has the correct formatting
+			api.Config.ApiPort = ":" + api.Config.ApiPort
+		}
+	}
 
 	api.Logger.Info("Listening on http://localhost" + api.Config.ApiPort)
 	http.ListenAndServe(api.Config.ApiPort,
