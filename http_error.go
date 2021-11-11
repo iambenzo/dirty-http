@@ -59,6 +59,10 @@ func (e *httpErrorWriter) InternalServerError(w http.ResponseWriter, msg string)
 	e.writeException(w, http.StatusInternalServerError, msg)
 }
 
+func (e *httpErrorWriter) BadRequest(w http.ResponseWriter, msg string) {
+	e.writeException(w, http.StatusBadRequest, msg)
+}
+
 // Useful for throwing an error after finding that a query parameter value
 // isn't valid
 func (e *httpErrorWriter) BadParameters(w http.ResponseWriter, parameter string) {
