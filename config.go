@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"strconv"
+
+	"github.com/iambenzo/dirtyhttp/middleware"
 )
 
 type EnvConfig struct {
@@ -14,6 +16,7 @@ type EnvConfig struct {
 	DbUser      string
 	DbPassword  string
 	DbName      string
+	Cors        middleware.CorsConfig
 }
 
 // Pulls configuration from matching environment variables.
@@ -61,7 +64,7 @@ func getEnvConfig() (*EnvConfig, error) {
 	}
 
 	if haveProblem {
-		return &EnvConfig{}, errors.New("Not all environment variables are set.")
+		return &EnvConfig{}, errors.New("not all environment variables are set")
 	} else {
 		return &EnvConfig{
 			ApiUser:     os.Getenv("API_USER"),
@@ -71,6 +74,7 @@ func getEnvConfig() (*EnvConfig, error) {
 			DbUser:      os.Getenv("DB_USER"),
 			DbPassword:  os.Getenv("DB_PASSWORD"),
 			DbName:      os.Getenv("DB_NAME"),
+			Cors:        *middleware.DefaultCorsConfig(),
 		}, nil
 	}
 }

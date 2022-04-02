@@ -2,6 +2,8 @@ package dirtyhttp
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -24,6 +26,27 @@ func httpDo(r *http.Request) ([]byte, error) {
 
 	defer response.Body.Close()
 	return ioutil.ReadAll(response.Body)
+}
+
+func (c *httpClient) DoForStatus(r *http.Request, status int) ([]byte, error) {
+	res, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	defer res.Body.Close()
+
+    body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return []byte{}, err
+	}
+
+    if res.StatusCode != status {
+        return body, errors.New(fmt.Sprintf("Status code was %d, instead of the expected %d", res.StatusCode, status))
+    } else {
+        return body, nil
+    }
+
 }
 
 type upstream struct {

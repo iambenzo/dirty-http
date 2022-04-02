@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -123,19 +122,37 @@ func (api *Api) StartServiceNoAuth() {
 	)
 }
 
-// Generic HTTP response struct for passing messages back to users
-type HttpMessageResponse struct {
-	Message string `json:"message"`
-}
-
 // Generic function for marshalling structs into JSON output
-func EncodeResponseAsJSON(data interface{}, w io.Writer) {
+func (api *Api) WriteResponseAsJSON(data interface{}, w http.ResponseWriter) {
+	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(data)
 }
 
 // Generic function for marshalling structs into XML output
-func EncodeResponseAsXML(data interface{}, w io.Writer) {
+func (api *Api) WriteResponseAsXML(data interface{}, w http.ResponseWriter) {
+	w.Header().Add("Content-Type", "application/xml")
+	enc := xml.NewEncoder(w)
+	enc.Encode(data)
+}
+
+// Generic HTTP response struct for passing messages back to users
+type HttpMessageResponse struct {
+	Message string `json:"message"`
+}
+
+// (Deprecated) Generic function for marshalling structs into JSON output
+// Use Api.WriteResponseAsJSON instead
+func EncodeResponseAsJSON(data interface{}, w http.ResponseWriter) {
+	w.Header().Add("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.Encode(data)
+}
+
+// (Deprecated) Generic function for marshalling structs into XML output
+// Use Api.WriteResponseAsXML instead
+func EncodeResponseAsXML(data interface{}, w http.ResponseWriter) {
+	w.Header().Add("Content-Type", "application/xml")
 	enc := xml.NewEncoder(w)
 	enc.Encode(data)
 }
