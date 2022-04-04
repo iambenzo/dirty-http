@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/iambenzo/dirtyhttp/middleware"
 )
 
 // Main entrypoint for using this module
@@ -85,15 +83,12 @@ func (api Api) StartService() {
 
 	api.Logger.Info("Listening on http://localhost" + api.Config.ApiPort)
 	http.ListenAndServe(api.Config.ApiPort,
-		&middleware.TimeoutMiddleware{
-			Enabled: api.Config.Timeout.Enabled,
-			Length:  api.Config.Timeout.Length,
-			Next: &middleware.GzipMiddleware{
-				Enabled: api.Config.Gzip.Enabled,
-				Next: &middleware.AuthMiddleware{
-					Enabled: api.Config.Authentication.Enabled,
-					User:    api.Config.Authentication.ApiUser,
-					Pass:    api.Config.Authentication.ApiPassword,
+		&timeoutMiddleware{
+			Options: api.Config.Timeout,
+			Next: &gzipMiddleware{
+				Options: api.Config.Gzip,
+				Next: &authMiddleware{
+					Options: api.Config.Authentication,
 				},
 			},
 		},
@@ -101,6 +96,7 @@ func (api Api) StartService() {
 }
 
 // Deprecated: Use the new config setup. See docs for info
+//
 // Will start a HTTP Listener on port 8080, unless configured otherwise.
 //
 // Will make use of a default suite of middleware: Timeout and Gzip.
@@ -122,8 +118,11 @@ func (api *Api) StartServiceNoAuth() {
 
 	api.Logger.Info("Listening on http://localhost" + api.Config.ApiPort)
 	http.ListenAndServe(api.Config.ApiPort,
-		&middleware.TimeoutMiddleware{
-			Next: &middleware.GzipMiddleware{},
+		&timeoutMiddleware{
+			Options: api.Config.Timeout,
+			Next: &gzipMiddleware{
+				Options: api.Config.Gzip,
+			},
 		},
 	)
 }
@@ -148,6 +147,7 @@ type HttpMessageResponse struct {
 }
 
 // Deprecated: Use Api.WriteResponseAsJSON instead
+//
 // Generic function for marshalling structs into JSON output
 func EncodeResponseAsJSON(data interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
@@ -156,6 +156,7 @@ func EncodeResponseAsJSON(data interface{}, w http.ResponseWriter) {
 }
 
 // Deprecated: Use Api.WriteResponseAsXML instead
+//
 // Generic function for marshalling structs into XML output
 func EncodeResponseAsXML(data interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/xml")

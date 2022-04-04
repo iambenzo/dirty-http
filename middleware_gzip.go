@@ -1,4 +1,4 @@
-package middleware
+package dirtyhttp
 
 import (
 	"compress/gzip"
@@ -7,17 +7,17 @@ import (
 	"strings"
 )
 
-type GzipMiddleware struct {
-	Enabled bool
+type gzipMiddleware struct {
+	Options GzipConfig
 	Next    http.Handler
 }
 
-func (gm *GzipMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (gm *gzipMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if gm.Next == nil {
 		gm.Next = http.DefaultServeMux
 	}
 
-	if !gm.Enabled {
+	if !gm.Options.Enabled {
 		gm.Next.ServeHTTP(w, r)
 		return
 	}

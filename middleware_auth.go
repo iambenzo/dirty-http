@@ -1,24 +1,22 @@
-package middleware
+package dirtyhttp
 
 import (
 	"log"
 	"net/http"
 )
 
-type AuthMiddleware struct {
-	Enabled bool
-	User    string
-	Pass    string
+type authMiddleware struct {
+	Options AuthConfig
 	Next    http.Handler
 }
 
-func (am AuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (am authMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.SetPrefix("\033[31m[ERROR] \033[0m")
 	if am.Next == nil {
 		am.Next = http.DefaultServeMux
 	}
 
-	if !am.Enabled {
+	if !am.Options.Enabled {
 		am.Next.ServeHTTP(w, r)
 		return
 	}
@@ -35,7 +33,7 @@ func (am AuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if username == am.User && password == am.Pass {
+	if username == am.Options.ApiUser && password == am.Options.ApiPassword {
 		am.Next.ServeHTTP(w, r)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)

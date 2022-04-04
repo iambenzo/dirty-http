@@ -1,4 +1,4 @@
-package middleware
+package dirtyhttp
 
 import (
 	"context"
@@ -8,25 +8,24 @@ import (
 	"time"
 )
 
-type TimeoutMiddleware struct {
-	Enabled bool
-	Length  int
+type timeoutMiddleware struct {
+	Options TimeoutConfig
 	Next    http.Handler
 }
 
-func (tm TimeoutMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (tm timeoutMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if tm.Next == nil {
 		tm.Next = http.DefaultServeMux
 	}
 
-	if !tm.Enabled {
+	if !tm.Options.Enabled {
 		tm.Next.ServeHTTP(w, r)
 		return
 	}
 
 	// Replace request context with a replica that also has a timeout
 	ctx := r.Context()
-	duration, err := time.ParseDuration(fmt.Sprintf("%d%s", tm.Length, "s"))
+	duration, err := time.ParseDuration(fmt.Sprintf("%d%s", tm.Options.Length, "s"))
 	if err != nil {
 		fmt.Printf("Couldn't parse timeout config \n %v \n", err)
 		os.Exit(1)
