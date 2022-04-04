@@ -100,6 +100,7 @@ func (api Api) StartService() {
 	)
 }
 
+// Deprecated: Use the new config setup. See docs for info
 // Will start a HTTP Listener on port 8080, unless configured otherwise.
 //
 // Will make use of a default suite of middleware: Timeout and Gzip.
