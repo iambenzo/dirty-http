@@ -8,12 +8,18 @@ import (
 )
 
 type GzipMiddleware struct {
-	Next http.Handler
+	Enabled bool
+	Next    http.Handler
 }
 
 func (gm *GzipMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if gm.Next == nil {
 		gm.Next = http.DefaultServeMux
+	}
+
+	if !gm.Enabled {
+		gm.Next.ServeHTTP(w, r)
+		return
 	}
 
 	encodings := r.Header.Get("Accept-Encoding")
@@ -55,4 +61,3 @@ type gzipPusherResponseWriter struct {
 func (grw gzipResponseWriter) Write(data []byte) (int, error) {
 	return grw.Writer.Write(data)
 }
-

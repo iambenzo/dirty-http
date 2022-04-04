@@ -3,8 +3,8 @@ package dirtyhttp
 import (
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/iambenzo/dirtyhttp/middleware"
@@ -12,7 +12,7 @@ import (
 
 // Main entrypoint for using this module
 type Api struct {
-	Config          *EnvConfig
+	Config          *Config
 	Logger          *logger
 	HttpErrorWriter *httpErrorWriter
 	Upstream        *upstream
@@ -39,11 +39,8 @@ func (api *Api) Init() {
 	api.Upstream = newUpstream()
 
 	// Attempt to get config from environment variables
-	cnf, err := getEnvConfig()
-	if err != nil {
-		api.Logger.Fatal(fmt.Sprintf("Error in config: %v", err))
-	}
-	api.Config = cnf
+	getConfig()
+	api.Config = config
 
 	// Register a health check endpoint
 	// (useful for k8s deployments and heartbeats)
@@ -52,7 +49,7 @@ func (api *Api) Init() {
 }
 
 // Initialise the service with a programmatically supplied configuration
-func (api *Api) InitWithConfig(config *EnvConfig) {
+func (api *Api) InitWithConfig(config *Config) {
 
 	// Avoid initialising multiple times
 	if api.Config != nil {
@@ -76,6 +73,11 @@ func (api *Api) InitWithConfig(config *EnvConfig) {
 // Will make use of a default suite of middleware: Timeout, Gzip and Basic Authentication.
 func (api Api) StartService() {
 
+	// Don't start the service if the user just wants help
+	if strings.Contains(strings.Join(os.Args, " "), "-h") {
+		os.Exit(0)
+	}
+
 	if api.Config == nil {
 		log := logger{}
 		log.Fatal("dirtyhttp needs to be <Init()>ialised")
@@ -84,10 +86,14 @@ func (api Api) StartService() {
 	api.Logger.Info("Listening on http://localhost" + api.Config.ApiPort)
 	http.ListenAndServe(api.Config.ApiPort,
 		&middleware.TimeoutMiddleware{
+			Enabled: api.Config.Timeout.Enabled,
+			Length:  api.Config.Timeout.Length,
 			Next: &middleware.GzipMiddleware{
+				Enabled: api.Config.Gzip.Enabled,
 				Next: &middleware.AuthMiddleware{
-					User: api.Config.ApiUser,
-					Pass: api.Config.ApiPassword,
+					Enabled: api.Config.Authentication.Enabled,
+					User:    api.Config.Authentication.ApiUser,
+					Pass:    api.Config.Authentication.ApiPassword,
 				},
 			},
 		},
@@ -104,7 +110,6 @@ func (api *Api) StartServiceNoAuth() {
 		log.Fatal("dirtyhttp needs to be <Init()>ialised")
 	} else {
 		// We should probably quickly validate the custom config
-
 		if api.Config.ApiPort == "" {
 			// Default if empty
 			api.Config.ApiPort = ":8080"
@@ -141,16 +146,16 @@ type HttpMessageResponse struct {
 	Message string `json:"message"`
 }
 
-// (Deprecated) Generic function for marshalling structs into JSON output
-// Use Api.WriteResponseAsJSON instead
+// Deprecated: Use Api.WriteResponseAsJSON instead
+// Generic function for marshalling structs into JSON output
 func EncodeResponseAsJSON(data interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.Encode(data)
 }
 
-// (Deprecated) Generic function for marshalling structs into XML output
-// Use Api.WriteResponseAsXML instead
+// Deprecated: Use Api.WriteResponseAsXML instead
+// Generic function for marshalling structs into XML output
 func EncodeResponseAsXML(data interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/xml")
 	enc := xml.NewEncoder(w)

@@ -1,5 +1,9 @@
 # Dirty HTTP
 
+<p>
+    <a href="https://pkg.go.dev/github.com/iambenzo/dirtyhttp"><img src="https://pkg.go.dev/badge/github.com/iambenzo/dirtyhttp.svg" alt="Go Reference"></a>
+</p>
+
 A quick and dirty utility module for getting a HTTP application up and running:
 
 ```go
