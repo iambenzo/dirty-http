@@ -85,10 +85,15 @@ func (api Api) StartService() {
 	http.ListenAndServe(api.Config.ApiPort,
 		&timeoutMiddleware{
 			Options: api.Config.Timeout,
-			Next: &gzipMiddleware{
-				Options: api.Config.Gzip,
-				Next: &authMiddleware{
-					Options: api.Config.Authentication,
+			Next: &corsMiddleware{
+				Options:         &config.Cors,
+				Logger:          api.Logger,
+				HttpErrorWriter: api.HttpErrorWriter,
+				Next: &gzipMiddleware{
+					Options: api.Config.Gzip,
+					Next: &authMiddleware{
+						Options: api.Config.Authentication,
+					},
 				},
 			},
 		},
