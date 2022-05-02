@@ -22,6 +22,7 @@ type DbConfig struct {
 
 // Cors relevant configuration
 type CorsConfig struct {
+	Enabled            bool
 	CorsAllowedOrigins map[string]bool
 	CorsAllowedMethods map[string]bool
 }
@@ -71,27 +72,32 @@ func newConfig() (*Config, error) {
 	c.Database.DbUser = viper.GetString("db.user")
 	c.Database.DbUrl = viper.GetString("db.url")
 
+	c.Cors.Enabled = viper.GetBool("middleware.cors.enabled")
 	c.Cors.CorsAllowedOrigins = make(map[string]bool)
-	for _, v := range viper.GetStringSlice("middleware.cors.allowed-origins") {
-		if v == "*" {
-			c.Cors.CorsAllowedOrigins = make(map[string]bool)
-			c.Cors.CorsAllowedOrigins[v] = true
-			break
-		}
-		c.Cors.CorsAllowedOrigins[v] = true
-	}
 
-	c.Cors.CorsAllowedMethods = make(map[string]bool)
-	for _, v := range viper.GetStringSlice("middleware.cors.allowed-methods") {
-		switch strings.ToUpper(v) {
-		case http.MethodGet:
-			c.Cors.CorsAllowedMethods[http.MethodGet] = true
-		case http.MethodPut:
-			c.Cors.CorsAllowedMethods[http.MethodPut] = true
-		case http.MethodPost:
-			c.Cors.CorsAllowedMethods[http.MethodPost] = true
-		case http.MethodDelete:
-			c.Cors.CorsAllowedMethods[http.MethodDelete] = true
+	if c.Cors.Enabled {
+		for _, v := range viper.GetStringSlice("middleware.cors.allowed-origins") {
+			if v == "*" {
+				c.Cors.CorsAllowedOrigins = make(map[string]bool)
+				c.Cors.CorsAllowedOrigins[v] = true
+				break
+			}
+			c.Cors.CorsAllowedOrigins[v] = true
+		}
+
+		c.Cors.CorsAllowedMethods = make(map[string]bool)
+		c.Cors.CorsAllowedMethods[http.MethodOptions] = true
+		for _, v := range viper.GetStringSlice("middleware.cors.allowed-methods") {
+			switch strings.ToUpper(v) {
+			case http.MethodGet:
+				c.Cors.CorsAllowedMethods[http.MethodGet] = true
+			case http.MethodPut:
+				c.Cors.CorsAllowedMethods[http.MethodPut] = true
+			case http.MethodPost:
+				c.Cors.CorsAllowedMethods[http.MethodPost] = true
+			case http.MethodDelete:
+				c.Cors.CorsAllowedMethods[http.MethodDelete] = true
+			}
 		}
 	}
 
@@ -126,7 +132,6 @@ func getConfig() {
 	if err != nil {
 		l := logger{}
 		l.Fatal(fmt.Sprintf("Error in config: %v", err))
-		// os.Exit(1)
 	}
 }
 
@@ -139,6 +144,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&printConfig, "print-config", false, "Print application configuration on startup")
 	rootCmd.Flags().IntP("port", "p", 8080, "Port to run Application server on")
 	viper.BindPFlag("port", rootCmd.Flags().Lookup("port"))
+	rootCmd.Flags().Bool("cors", false, "Enable CORS processing")
+	viper.BindPFlag("middleware.cors.enabled", rootCmd.Flags().Lookup("cors"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -169,26 +176,22 @@ func initConfig() {
 	viper.BindEnv("db.user", "DB_USER")
 	viper.BindEnv("db.password", "DB_PASSWORD")
 
+	viper.SetDefault("middleware.cors.enabled", false)
 	viper.SetDefault("middleware.cors.allowed-origins", []string{"*"})
-	viper.SetDefault("middleware.cors.allowed-methods", []string{"GET"})
+	viper.SetDefault("middleware.cors.allowed-methods", []string{http.MethodOptions, http.MethodGet})
 
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		// home, err := os.UserHomeDir()
-		// cobra.CheckErr(err)
 
-		// Search config in home directory with name ".config-play" (without extension).
+		// Search config in local directory with name ".config" (without extension).
 		viper.AddConfigPath(".")
-		// viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".config")
 	}
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	// viper.SetEnvPrefix("API")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

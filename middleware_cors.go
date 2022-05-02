@@ -14,19 +14,24 @@ type corsMiddleware struct {
 }
 
 func (cm corsMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	if !cm.Options.Enabled {
+		cm.Next.ServeHTTP(w, r)
+		return
+	}
+
 	origin := r.Header.Get("Origin")
+	allowedMethods := make([]string, 0)
+
+	for k := range cm.Options.CorsAllowedMethods {
+		allowedMethods = append(allowedMethods, k)
+	}
 
 	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		allowedMethods := make([]string, 0, len(cm.Options.CorsAllowedMethods))
-		for k := range cm.Options.CorsAllowedMethods {
-			allowedMethods = append(allowedMethods, k)
-		}
-
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Add("Access-Control-Allow-Origin", origin)
+		w.Header().Add("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		return
 	}
@@ -42,6 +47,10 @@ func (cm corsMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cm.HttpErrorWriter.MethodNotAllowed(w, "Method not allowed")
 		return
 	}
+
+	w.Header().Add("Access-Control-Allow-Origin", origin)
+	w.Header().Add("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 	cm.Next.ServeHTTP(w, r)
 }
